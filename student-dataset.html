@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dataset</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --primary: #2563eb;
+    --border: #e5e7eb;
+    --good: #16a34a;
+    --warn: #d97706;
+    --bad: #dc2626;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px 16px 48px;
+  }
+  .container { max-width: 1000px; margin: 0 auto; }
+  header { margin-bottom: 24px; }
+  header h1 { font-size: 1.7rem; }
+  header p { color: var(--muted); margin-top: 4px; }
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .stat span { display: block; font-size: 0.8rem; color: var(--muted); }
+  .stat strong { font-size: 1.6rem; color: var(--primary); }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .panel h2 { font-size: 1.05rem; margin-bottom: 12px; }
+
+  .controls, .add-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  input, select, button {
+    font: inherit;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    width: 100%;
+  }
+  input:focus, select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+  button {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button:hover { background: #1d4ed8; }
+  .msg { margin-top: 8px; font-size: 0.85rem; color: var(--bad); min-height: 1.1em; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th {
+    background: #f9fafb;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  th:hover { color: var(--primary); }
+  tbody tr:hover { background: #f9fafb; }
+
+  .bar { background: var(--border); border-radius: 99px; height: 8px; width: 90px; display: inline-block; vertical-align: middle; margin-right: 8px; }
+  .bar i { display: block; height: 100%; border-radius: 99px; }
+
+  .badge { padding: 3px 10px; border-radius: 99px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+  .badge.good { background: #dcfce7; color: var(--good); }
+  .badge.warn { background: #fef3c7; color: var(--warn); }
+  .badge.bad  { background: #fee2e2; color: var(--bad); }
+
+  .count { color: var(--muted); font-size: 0.85rem; margin-top: 10px; }
+  .empty { text-align: center; color: var(--muted); padding: 24px; }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Student Dataset</h1>
+    <p>Attendance and exam performance records. Search, filter, sort and add students.</p>
+  </header>
+
+  <section class="summary" id="summary"></section>
+
+  <section class="panel">
+    <h2>Search &amp; Filter</h2>
+    <div class="controls">
+      <input type="text" id="search" placeholder="Search by Student ID">
+      <select id="deptFilter"></select>
+      <select id="levelFilter"></select>
+      <button id="resetBtn" type="button">Reset</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Add Student</h2>
+    <form class="add-form" id="addForm">
+      <input type="text" id="newId" placeholder="Student ID (e.g. STU025)" required>
+      <select id="newDept" required></select>
+      <select id="newLevel" required></select>
+      <input type="number" id="newAtt" placeholder="Attendance %" min="0" max="100" required>
+      <input type="number" id="newScore" placeholder="Avg exam score" min="0" max="100" required>
+      <button type="submit">Add</button>
+    </form>
+    <div class="msg" id="formMsg"></div>
+  </section>
+
+  <section class="panel">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-key="id">Student ID</th>
+            <th data-key="dept">Department</th>
+            <th data-key="level">Level</th>
+            <th data-key="attendance">Attendance</th>
+            <th data-key="score">Avg Exam Score</th>
+            <th data-key="status">Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="count" id="count"></div>
+  </section>
+
+  <footer>Click a column heading to sort. Status: "At Risk" = attendance below 75% or score below 50.</footer>
+</div>
+
+<script>
+  // ---------- Dataset ----------
+  const departments = ["Computer Science", "Engineering", "Business Admin", "Mathematics", "Biology", "Economics"];
+  const levels = [100, 200, 300, 400];
+
+  let students = [
+    { id: "STU001", dept: "Computer Science", level: 100, attendance: 92, score: 78 },
+    { id: "STU002", dept: "Engineering",      level: 200, attendance: 85, score: 69 },
+    { id: "STU003", dept: "Business Admin",   level: 300, attendance: 70, score: 55 },
+    { id: "STU004", dept: "Mathematics",      level: 400, attendance: 96, score: 88 },
+    { id: "STU005", dept: "Biology",          level: 100, attendance: 64, score: 47 },
+    { id: "STU006", dept: "Economics",        level: 200, attendance: 88, score: 73 },
+    { id: "STU007", dept: "Computer Science", level: 300, attendance: 90, score: 84 },
+    { id: "STU008", dept: "Engineering",      level: 400, attendance: 78, score: 61 },
+    { id: "STU009", dept: "Business Admin",   level: 100, attendance: 82, score: 66 },
+    { id: "STU010", dept: "Mathematics",      level: 200, attendance: 94, score: 91 },
+    { id: "STU011", dept: "Biology",          level: 300, attendance: 73, score: 58 },
+    { id: "STU012", dept: "Economics",        level: 400, attendance: 86, score: 76 },
+    { id: "STU013", dept: "Computer Science", level: 200, attendance: 97, score: 93 },
+    { id: "STU014", dept: "Engineering",      level: 100, attendance: 68, score: 52 },
+    { id: "STU015", dept: "Business Admin",   level: 400, attendance: 91, score: 80 },
+    { id: "STU016", dept: "Mathematics",      level: 300, attendance: 80, score: 72 },
+    { id: "STU017", dept: "Biology",          level: 200, attendance: 89, score: 70 },
+    { id: "STU018", dept: "Economics",        level: 100, attendance: 59, score: 44 },
+    { id: "STU019", dept: "Computer Science", level: 400, attendance: 95, score: 86 },
+    { id: "STU020", dept: "Engineering",      level: 300, attendance: 83, score: 67 },
+    { id: "STU021", dept: "Business Admin",   level: 200, attendance: 76, score: 63 },
+    { id: "STU022", dept: "Mathematics",      level: 100, attendance: 87, score: 79 },
+    { id: "STU023", dept: "Biology",          level: 400, attendance: 93, score: 82 },
+    { id: "STU024", dept: "Economics",        level: 300, attendance: 72, score: 51 }
+  ];
+
+  // ---------- State ----------
+  let sortKey = "id";
+  let sortAsc = true;
+
+  // ---------- Helpers ----------
+  const $ = id => document.getElementById(id);
+
+  function getStatus(s) {
+    if (s.attendance < 75 || s.score < 50) return { label: "At Risk", cls: "bad" };
+    if (s.score >= 70 && s.attendance >= 85) return { label: "Excellent", cls: "good" };
+    return { label: "Satisfactory", cls: "warn" };
+  }
+
+  function average(list, key) {
+    if (!list.length) return 0;
+    return list.reduce((sum, s) => sum + s[key], 0) / list.length;
+  }
+
+  function fillSelect(select, options, firstLabel) {
+    select.innerHTML = `<option value="">${firstLabel}</option>` +
+      options.map(o => `<option value="${o}">${o}</option>`).join("");
+  }
+
+  // ---------- Rendering ----------
+  function renderSummary(list) {
+    const atRisk = list.filter(s => getStatus(s).cls === "bad").length;
+    $("summary").innerHTML = `
+      <div class="stat"><span>Students</span><strong>${list.length}</strong></div>
+      <div class="stat"><span>Average Attendance</span><strong>${average(list, "attendance").toFixed(1)}%</strong></div>
+      <div class="stat"><span>Average Exam Score</span><strong>${average(list, "score").toFixed(1)}</strong></div>
+      <div class="stat"><span>At Risk</span><strong>${atRisk}</strong></div>`;
+  }
+
+  function getFiltered() {
+    const q = $("search").value.trim().toLowerCase();
+    const dept = $("deptFilter").value;
+    const level = $("levelFilter").value;
+
+    const list = students.filter(s =>
+      s.id.toLowerCase().includes(q) &&
+      (!dept || s.dept === dept) &&
+      (!level || s.level === Number(level))
+    );
+
+    list.sort((a, b) => {
+      let x = sortKey === "status" ? getStatus(a).label : a[sortKey];
+      let y = sortKey === "status" ? getStatus(b).label : b[sortKey];
+      if (x < y) return sortAsc ? -1 : 1;
+      if (x > y) return sortAsc ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }
+
+  function render() {
+    const list = getFiltered();
+    renderSummary(list);
+
+    $("tbody").innerHTML = list.length
+      ? list.map(s => {
+          const st = getStatus(s);
+          const barColor = s.attendance >= 85 ? "var(--good)" : s.attendance >= 75 ? "var(--warn)" : "var(--bad)";
+          return `<tr>
+            <td><strong>${s.id}</strong></td>
+            <td>${s.dept}</td>
+            <td>${s.level}</td>
+            <td><span class="bar"><i style="width:${s.attendance}%;background:${barColor}"></i></span>${s.attendance}%</td>
+            <td>${s.score}</td>
+            <td><span class="badge ${st.cls}">${st.label}</span></td>
+          </tr>`;
+        }).join("")
+      : `<tr><td colspan="6" class="empty">No students match your search.</td></tr>`;
+
+    $("count").textContent = `Showing ${list.length} of ${students.length} students`;
+  }
+
+  // ---------- Events ----------
+  document.querySelectorAll("th").forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      sortAsc = sortKey === key ? !sortAsc : true;
+      sortKey = key;
+      render();
+    });
+  });
+
+  ["search", "deptFilter", "levelFilter"].forEach(id =>
+    $(id).addEventListener("input", render));
+
+  $("resetBtn").addEventListener("click", () => {
+    $("search").value = "";
+    $("deptFilter").value = "";
+    $("levelFilter").value = "";
+    sortKey = "id"; sortAsc = true;
+    render();
+  });
+
+  $("addForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const id = $("newId").value.trim().toUpperCase();
+    const attendance = Number($("newAtt").value);
+    const score = Number($("newScore").value);
+
+    if (students.some(s => s.id === id)) {
+      $("formMsg").textContent = "That Student ID already exists.";
+      return;
+    }
+    if (attendance < 0 || attendance > 100 || score < 0 || score > 100) {
+      $("formMsg").textContent = "Attendance and score must be between 0 and 100.";
+      return;
+    }
+
+    students.push({
+      id,
+      dept: $("newDept").value,
+      level: Number($("newLevel").value),
+      attendance,
+      score
+    });
+    $("formMsg").textContent = "";
+    e.target.reset();
+    render();
+  });
+
+  // ---------- Init ----------
+  fillSelect($("deptFilter"), departments, "All Departments");
+  fillSelect($("levelFilter"), levels, "All Levels");
+  fillSelect($("newDept"), departments, "Department");
+  fillSelect($("newLevel"), levels, "Level");
+  render();
+</script>
+</body>
+</html>
